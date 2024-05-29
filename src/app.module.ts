@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PaymentsModule } from './payments/payments.module';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { WebhooksModule } from './webhooks/webhooks.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { MerchantModule } from './merchant/merchant.module';
@@ -11,14 +11,19 @@ import { Transaction } from './typeorm/Transaction';
 
 @Module({
   imports: [
-    TypeOrmModule.forRoot({
-      type: 'mysql',
-      host: 'localhost',
-      port: 3306,
-      username: 'root',
-      database: 'ivorypaydb',
-      entities: [Merchant, Transaction],
-      synchronize: true,
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        type: 'mysql',
+        host: config.get<string>('DATABASE_HOST'),
+        port: config.get<number>('DATABASE_PORT'),
+        username: config.get<string>('DATABASE_USER'),
+        database: config.get<string>('DATABASE_NAME'),
+        password: config.get<string>('DATABASE_PASSWORD'),
+        entities: [Merchant, Transaction],
+        synchronize: true,
+      }),
     }),
     PaymentsModule,
     ConfigModule.forRoot({
